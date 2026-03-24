@@ -1,0 +1,9 @@
+{
+  "name": "Ms Fragrances",
+  "description": "A modern full-stack e-commerce application for premium fragrances, featuring a user shop and an admin dashboard.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
