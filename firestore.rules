@@ -11,6 +11,7 @@ service cloud.firestore {
     // Fields:
     //   - id: string (required)
     //   - name: string (required)
+    //   - username: string (required)
     //   - email: string (required)
     //   - role: string (enum: user, admin) (required)
     //   - createdAt: string (required)
@@ -57,8 +58,9 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          request.auth.token.email == "msfragrances10@gmail.com");
+        (request.auth.token.email == "msfragrances10@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
 
     function hasRequiredFields(fields) {
@@ -74,10 +76,11 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return hasRequiredFields(['id', 'name', 'email', 'role', 'createdAt']) &&
-             hasOnlyAllowedFields(['id', 'name', 'email', 'role', 'createdAt']) &&
+      return hasRequiredFields(['id', 'name', 'username', 'email', 'role', 'createdAt']) &&
+             hasOnlyAllowedFields(['id', 'name', 'username', 'email', 'role', 'createdAt']) &&
              data.id is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.username is string && data.username.size() > 0 && data.username.size() < 50 &&
              data.email is string &&
              data.role in ['user', 'admin'] &&
              data.createdAt is string;

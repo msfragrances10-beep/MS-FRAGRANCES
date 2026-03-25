@@ -11,8 +11,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand Section */}
           <div className="space-y-6">
-            <Link to="/" className="text-2xl font-bold tracking-tighter uppercase">
-              Ms Fragrances
+            <Link to="/" className="flex items-center gap-2 text-2xl font-bold tracking-tighter uppercase">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
+                <span className="text-xs font-bold">MS</span>
+              </div>
+              <span>Ms Fragrances</span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
               Curating the world's most exquisite scents. Experience luxury, elegance, and timeless fragrances delivered to your doorstep.

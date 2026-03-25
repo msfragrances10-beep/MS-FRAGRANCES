@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  updateProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,12 +26,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
-            setUser(userDoc.data() as User);
+            const userData = userDoc.data() as User;
+            // Ensure msfragrances10@gmail.com is always an admin
+            if (firebaseUser.email === 'msfragrances10@gmail.com' && userData.role !== 'admin') {
+              const updatedUser = { ...userData, role: 'admin' as Role };
+              await setDoc(userDocRef, updatedUser, { merge: true });
+              setUser(updatedUser);
+            } else {
+              setUser(userData);
+            }
           } else {
             // Create new user document
             const newUser: User = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || 'User',
+              username: firebaseUser.email?.split('@')[0] || 'user',
               email: firebaseUser.email || '',
               role: firebaseUser.email === 'msfragrances10@gmail.com' ? 'admin' : 'user',
               createdAt: new Date().toISOString(),
@@ -56,8 +66,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = user?.role === 'admin';
 
+  const updateProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.id);
+    try {
+      await setDoc(userDocRef, { ...user, ...data }, { merge: true });
+      setUser({ ...user, ...data });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.id}`);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

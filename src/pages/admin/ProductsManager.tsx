@@ -10,7 +10,7 @@ import { Textarea } from '@/src/components/ui/Textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { formatPrice } from '@/src/lib/utils';
-import { Plus, Edit2, Trash2, X, Image as ImageIcon, Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Image as ImageIcon, Upload, Link as LinkIcon, Loader2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -139,13 +139,35 @@ const ProductsManager: React.FC = () => {
     }));
   };
 
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-black">Products Manager</h1>
-        <Button onClick={() => { setIsEditing(true); setCurrentProduct({ imageURLs: [], stockStatus: 'in-stock' }); }} className="gap-2">
+    <div className="space-y-10">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-bold tracking-tighter text-black uppercase">Products</h1>
+          <p className="text-neutral-500">Manage your fragrance collection and inventory.</p>
+        </div>
+        <Button onClick={() => { setIsEditing(true); setCurrentProduct({ imageURLs: [], stockStatus: 'in-stock' }); }} className="gap-2 rounded-xl h-12 px-6 shadow-lg shadow-black/10">
           <Plus size={18} /> Add New Product
         </Button>
+      </div>
+
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+          <ImageIcon size={18} />
+        </div>
+        <Input 
+          placeholder="Search products by name or category..." 
+          className="pl-12 h-14 rounded-2xl border-none bg-white shadow-sm focus-visible:ring-black"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <AnimatePresence>
@@ -154,18 +176,18 @@ const ProductsManager: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
           >
-            <Card className="w-full max-w-md border-none shadow-2xl">
+            <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl">
               <CardHeader>
-                <CardTitle className="text-xl font-bold">Confirm Deletion</CardTitle>
+                <CardTitle className="text-2xl font-bold tracking-tight">Confirm Deletion</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-neutral-600">Are you sure you want to delete this product? This action cannot be undone.</p>
+                <p className="text-neutral-600">Are you sure you want to delete this product? This action cannot be undone and will remove the item from the shop.</p>
               </CardContent>
-              <CardFooter className="flex justify-end gap-4">
-                <Button variant="ghost" onClick={() => setIsDeleting(null)}>Cancel</Button>
-                <Button variant="destructive" onClick={() => handleDeleteProduct(isDeleting)}>Delete</Button>
+              <CardFooter className="flex justify-end gap-3 pt-6">
+                <Button variant="ghost" onClick={() => setIsDeleting(null)} className="rounded-xl">Cancel</Button>
+                <Button variant="destructive" onClick={() => handleDeleteProduct(isDeleting)} className="rounded-xl px-8">Delete</Button>
               </CardFooter>
             </Card>
           </motion.div>
@@ -175,201 +197,242 @@ const ProductsManager: React.FC = () => {
       <AnimatePresence>
         {isEditing && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
           >
-            <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto border-none shadow-2xl">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl font-bold">
-                  {currentProduct?.id ? 'Edit Product' : 'Add New Product'}
-                </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
-                  <X size={24} />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSaveProduct} className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Product Name</Label>
-                      <Input
-                        id="name"
-                        value={currentProduct?.name || ''}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
-                        placeholder="e.g. Midnight Oud"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price ($)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        value={currentProduct?.price || ''}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })}
-                        placeholder="99.99"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <select
-                        id="category"
-                        className="flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
-                        value={currentProduct?.category || ''}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })}
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        <option value="Woody">Woody</option>
-                        <option value="Floral">Floral</option>
-                        <option value="Fresh">Fresh</option>
-                        <option value="Oriental">Oriental</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stockStatus">Stock Status</Label>
-                      <select
-                        id="stockStatus"
-                        className="flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
-                        value={currentProduct?.stockStatus || 'in-stock'}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, stockStatus: e.target.value as any })}
-                      >
-                        <option value="in-stock">In Stock</option>
-                        <option value="out-of-stock">Out of Stock</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={currentProduct?.description || ''}
-                      onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
-                      placeholder="Describe the fragrance notes and character..."
-                      className="min-h-[100px]"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label>Product Images</Label>
-                    
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {/* Local Upload */}
-                      <div className="space-y-2">
-                        <Label className="text-xs text-neutral-500">Upload from Device</Label>
-                        <div 
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-neutral-200 bg-neutral-50 transition-colors hover:bg-neutral-100"
-                        >
-                          {uploading ? (
-                            <Loader2 className="animate-spin text-neutral-400" size={20} />
-                          ) : (
-                            <>
-                              <Upload size={18} className="text-neutral-400" />
-                              <span className="text-sm text-neutral-600">Choose File</span>
-                            </>
-                          )}
-                        </div>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleFileUpload}
-                          disabled={uploading}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-3xl"
+            >
+              <Card className="max-h-[85vh] overflow-y-auto border-none shadow-2xl rounded-3xl">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-neutral-100 pb-6">
+                  <CardTitle className="text-3xl font-bold tracking-tight uppercase">
+                    {currentProduct?.id ? 'Edit Product' : 'New Product'}
+                  </CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} className="rounded-full hover:bg-neutral-100">
+                    <X size={24} />
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <form onSubmit={handleSaveProduct} className="space-y-8">
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                      <div className="space-y-3">
+                        <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-neutral-400">Product Name</Label>
+                        <Input
+                          id="name"
+                          value={currentProduct?.name || ''}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
+                          placeholder="e.g. Midnight Oud"
+                          className="h-12 rounded-xl border-neutral-200"
+                          required
                         />
                       </div>
-
-                      {/* URL Link */}
-                      <div className="space-y-2">
-                        <Label className="text-xs text-neutral-500">Add via URL</Label>
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={14} />
-                            <Input
-                              value={newImageUrl}
-                              onChange={(e) => setNewImageUrl(e.target.value)}
-                              placeholder="https://..."
-                              className="pl-9"
-                            />
-                          </div>
-                          <Button type="button" onClick={addImageUrl} variant="secondary" size="sm">Add</Button>
-                        </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="price" className="text-xs font-bold uppercase tracking-widest text-neutral-400">Price ($)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={currentProduct?.price || ''}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })}
+                          placeholder="99.99"
+                          className="h-12 rounded-xl border-neutral-200"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="category" className="text-xs font-bold uppercase tracking-widest text-neutral-400">Category</Label>
+                        <select
+                          id="category"
+                          className="flex h-12 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/5"
+                          value={currentProduct?.category || ''}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })}
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          <option value="Woody">Woody</option>
+                          <option value="Floral">Floral</option>
+                          <option value="Fresh">Fresh</option>
+                          <option value="Oriental">Oriental</option>
+                        </select>
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="stockStatus" className="text-xs font-bold uppercase tracking-widest text-neutral-400">Stock Status</Label>
+                        <select
+                          id="stockStatus"
+                          className="flex h-12 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/5"
+                          value={currentProduct?.stockStatus || 'in-stock'}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, stockStatus: e.target.value as any })}
+                        >
+                          <option value="in-stock">In Stock</option>
+                          <option value="out-of-stock">Out of Stock</option>
+                        </select>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-4">
-                      {currentProduct?.imageURLs?.map((url, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg bg-neutral-100 overflow-hidden group border border-neutral-200">
-                          <img src={url} alt="Product" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                          <button
-                            type="button"
-                            onClick={() => removeImageUrl(index)}
-                            className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ))}
-                      {(!currentProduct?.imageURLs || currentProduct.imageURLs.length === 0) && (
-                        <div className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-neutral-200 text-neutral-400">
-                          <ImageIcon size={24} />
-                        </div>
-                      )}
+                    <div className="space-y-3">
+                      <Label htmlFor="description" className="text-xs font-bold uppercase tracking-widest text-neutral-400">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={currentProduct?.description || ''}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
+                        placeholder="Describe the fragrance notes and character..."
+                        className="min-h-[120px] rounded-xl border-neutral-200 p-4"
+                        required
+                      />
                     </div>
-                  </div>
 
-                  <div className="flex justify-end gap-4 pt-4">
-                    <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    <Button type="submit" className="px-8">Save Product</Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+                    <div className="space-y-6">
+                      <Label className="text-xs font-bold uppercase tracking-widest text-neutral-400">Product Images</Label>
+                      
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        {/* Local Upload */}
+                        <div className="space-y-3">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Upload from Device</Label>
+                          <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex h-14 cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 transition-all hover:bg-neutral-100 hover:border-black/20"
+                          >
+                            {uploading ? (
+                              <Loader2 className="animate-spin text-neutral-400" size={20} />
+                            ) : (
+                              <>
+                                <Upload size={20} className="text-neutral-400" />
+                                <span className="text-sm font-medium text-neutral-600">Choose File</span>
+                              </>
+                            )}
+                          </div>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            disabled={uploading}
+                          />
+                        </div>
+
+                        {/* URL Link */}
+                        <div className="space-y-3">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Add via URL</Label>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+                              <Input
+                                value={newImageUrl}
+                                onChange={(e) => setNewImageUrl(e.target.value)}
+                                placeholder="https://..."
+                                className="pl-11 h-14 rounded-xl border-neutral-200"
+                              />
+                            </div>
+                            <Button type="button" onClick={addImageUrl} variant="secondary" className="h-14 rounded-xl px-6">Add</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
+                        {currentProduct?.imageURLs?.map((url, index) => (
+                          <div key={index} className="relative aspect-square rounded-2xl bg-neutral-100 overflow-hidden group border border-neutral-200 shadow-sm">
+                            <img src={url} alt="Product" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                            <button
+                              type="button"
+                              onClick={() => removeImageUrl(index)}
+                              className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500 scale-90 group-hover:scale-100"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        {(!currentProduct?.imageURLs || currentProduct.imageURLs.length === 0) && (
+                          <div className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 text-neutral-300">
+                            <ImageIcon size={32} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-4 pt-6 border-t border-neutral-100">
+                      <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl h-12 px-8">Cancel</Button>
+                      <Button type="submit" className="rounded-xl h-12 px-12 shadow-lg shadow-black/10">Save Product</Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <Card key={product.id} className="border-none shadow-sm overflow-hidden group">
-            <div className="aspect-[4/3] overflow-hidden bg-neutral-100 flex items-center justify-center">
-              {product.imageURLs && product.imageURLs.length > 0 ? (
-                <img
-                  src={product.imageURLs[0]}
-                  alt={product.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <ImageIcon size={48} className="text-neutral-300" />
-              )}
-            </div>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">{product.category}</Badge>
-                <span className="font-bold text-black">{formatPrice(product.price)}</span>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+        {filteredProducts.map((product) => (
+          <motion.div 
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            key={product.id}
+          >
+            <Card className="border-none shadow-sm overflow-hidden group rounded-3xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+                {product.imageURLs && product.imageURLs.length > 0 ? (
+                  <img
+                    src={product.imageURLs[0]}
+                    alt={product.name}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-neutral-300">
+                    <ImageIcon size={64} />
+                  </div>
+                )}
+                <div className="absolute left-4 top-4">
+                  <Badge variant={product.stockStatus === 'in-stock' ? 'success' : 'destructive'} className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest shadow-sm">
+                    {product.stockStatus === 'in-stock' ? 'In Stock' : 'Out of Stock'}
+                  </Badge>
+                </div>
               </div>
-              <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <p className="line-clamp-2 text-sm text-neutral-500">{product.description}</p>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2 border-t border-neutral-50 pt-4">
-              <Button variant="ghost" size="icon" onClick={() => { setCurrentProduct(product); setIsEditing(true); }}>
-                <Edit2 size={16} />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => setIsDeleting(product.id)}>
-                <Trash2 size={16} />
-              </Button>
-            </CardFooter>
-          </Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{product.category}</span>
+                  <span className="text-xl font-bold text-black">{formatPrice(product.price)}</span>
+                </div>
+                <CardTitle className="text-2xl font-bold tracking-tight">{product.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-6">
+                <p className="line-clamp-2 text-sm text-neutral-500 leading-relaxed">{product.description}</p>
+              </CardContent>
+              <CardFooter className="flex justify-between gap-2 border-t border-neutral-50 pt-6 px-6 pb-6">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 gap-2 rounded-xl border-neutral-200 hover:bg-neutral-50" 
+                  onClick={() => { setCurrentProduct(product); setIsEditing(true); }}
+                >
+                  <Edit2 size={16} /> Edit
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600" 
+                  onClick={() => setIsDeleting(product.id)}
+                >
+                  <Trash2 size={18} />
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
         ))}
+        {filteredProducts.length === 0 && (
+          <div className="col-span-full py-20 text-center">
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-neutral-100 text-neutral-300">
+              <Package size={48} />
+            </div>
+            <h3 className="text-2xl font-bold text-neutral-400 uppercase tracking-tight">No products found</h3>
+            <p className="text-neutral-500">Try adjusting your search or add a new product.</p>
+          </div>
+        )}
       </div>
     </div>
   );

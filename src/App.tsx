@@ -11,12 +11,43 @@ import OrderConfirmation from '@/src/pages/OrderConfirmation';
 import Login from '@/src/pages/Login';
 import Search from '@/src/pages/Search';
 import Contact from '@/src/pages/Contact';
+import Profile from '@/src/pages/Profile';
 import AdminLayout from '@/src/pages/admin/AdminLayout';
 import AdminDashboard from '@/src/pages/admin/AdminDashboard';
 import ProductsManager from '@/src/pages/admin/ProductsManager';
 import OrdersManager from '@/src/pages/admin/OrdersManager';
 import Footer from '@/src/components/Footer';
 import { Toaster } from 'sonner';
+import { Button } from '@/src/components/ui/Button';
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-screen flex-col items-center justify-center bg-white p-4 text-center">
+          <h1 className="mb-4 text-4xl font-bold uppercase tracking-tighter">Something went wrong</h1>
+          <p className="mb-8 text-neutral-500">We encountered an unexpected error. Please try refreshing the page.</p>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const AppContent: React.FC = () => {
   const { loading } = useAuth();
@@ -46,6 +77,7 @@ const AppContent: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/search" element={<Search />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/profile" element={<Profile />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -68,7 +100,9 @@ export default function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </Router>
       </CartProvider>
     </AuthProvider>

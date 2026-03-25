@@ -22,8 +22,11 @@ const Navbar: React.FC = () => {
     <nav className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="text-2xl font-bold tracking-tighter text-black">
-            MS FRAGRANCES
+          <Link to="/" className="flex items-center gap-2 text-2xl font-bold tracking-tighter text-black">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
+              <span className="text-xs font-bold">MS</span>
+            </div>
+            <span>MS FRAGRANCES</span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-600">
             <Link to="/" className="hover:text-black transition-colors">Shop All</Link>
@@ -55,8 +58,10 @@ const Navbar: React.FC = () => {
                 </Link>
               )}
               <div className="flex items-center gap-2 text-sm font-medium">
-                <User size={18} />
-                <span>{user.name}</span>
+                <Link to="/profile" className="flex items-center gap-2 hover:text-black transition-colors">
+                  <User size={18} />
+                  <span>{user.username}</span>
+                </Link>
               </div>
               <button onClick={handleLogout} className="text-neutral-600 hover:text-black transition-colors">
                 <LogOut size={18} />
@@ -91,10 +96,10 @@ const Navbar: React.FC = () => {
             {user ? (
               <div className="flex flex-col gap-4">
                 {isAdmin && <Link to="/admin" onClick={() => setIsMenuOpen(false)}>Admin Dashboard</Link>}
-                <div className="flex items-center gap-2">
+                <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2">
                   <User size={18} />
-                  <span>{user.name}</span>
-                </div>
+                  <span>{user.username}</span>
+                </Link>
                 <button onClick={handleLogout} className="flex items-center gap-2 text-red-500">
                   <LogOut size={18} /> Logout
                 </button>

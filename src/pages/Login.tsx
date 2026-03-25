@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, googleProvider } from '@/src/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, googleProvider, db } from '@/src/firebase';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { Label } from '@/src/components/ui/Label';
@@ -13,6 +14,7 @@ import { motion } from 'motion/react';
 const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -38,7 +40,22 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        if (!username) {
+          toast.error('Username is required.');
+          setLoading(false);
+          return;
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // The AuthContext listener will create the initial doc, but we can update it immediately
+        const userDocRef = doc(db, 'users', userCredential.user.uid);
+        await setDoc(userDocRef, {
+          id: userCredential.user.uid,
+          name: username, // Using username as name initially
+          username: username,
+          email: email,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
         toast.success('Account created successfully!');
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -90,6 +107,19 @@ const Login: React.FC = () => {
             </div>
 
             <form onSubmit={handleEmailSignIn} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="johndoe"
+                    required
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email address</Label>
                 <Input
